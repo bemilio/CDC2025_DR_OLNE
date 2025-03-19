@@ -1,0 +1,23 @@
+\begin{tikzpicture}[>=latex, node distance=1cm, auto]
+
+    % Nodes
+    \node [draw, block] (plant) at (0,0) {$x^+ = Ax + \tsum_{i\in\mc I} B_i u_i$};
+    \node [draw, block, below=.3cmof plant] (GNEP) { $\begin{aligned}
+        &~~\bu^* \text{ that solves} \\
+        &\mathrm{VI}\big(F(\cdot|x), \bs{\mc U}_T(x)\big)
+    \end{aligned}$ };
+
+    \node [draw=none, left=of plant] (w) {};
+    \node [fill=black, circle, right=of plant, inner sep=1pt] (dot) {};
+
+    \node [draw=none, right=of dot] (x) {};
+
+    % Connections
+
+    \draw[-] (plant.east) --  node[above] {$x$}  (dot.west);
+    \draw[-] (dot.south) |- (GNEP.east);
+    \draw[->] (dot.east) -- (x.west);
+    \draw[-] (GNEP.west) -| (w.east);
+    \draw[->] (w.east) -- node[above] {$\bu^*[0]$}  (plant.west);
+      
+\end{tikzpicture}
