@@ -111,8 +111,8 @@ Control (DCSC), TU Delft, the Netherlands. E-mail addresses:
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{abstract}
-
-
+\rezasay{Emilio, It would be great if you could give your suggestions about the abstract.}
+This paper considers linear dynamic games with quadratic objective functions. Building on previous results, we formulate the finite-horizon, constrained game as an affine variational inequality. Leveraging its structure, we incorporate it into the Douglas-Rachford splitting method to accelerate computation with a linear convergence guarantee. Additionally, we demonstrate that each corresponding variational inequality exhibits quadratic convergence when the timestep is sufficiently large. Finally, we benchmark the proposed method through numerical experiments in a \red{vehicle platooning application}.
 \end{abstract}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Introduction}
@@ -228,7 +228,7 @@ We define the (infinite-horizon) Open-Loop Nash equilibrium (OL-NE) $\buol$ as a
 cannot be improved by unilateral modifications by any agent. 
 \begin{definition}[OL-NE] $\buol\in\mc{U}^{\infty}(x_0)$ is an OL-NE for the initial state $x_0$ if $\lim_{t\xrightarrow{}\infty} \phi(t,x_0,\buol)=0$ and
     \begin{equation}
-        J_i(x_0, \uol_i, \buol_{-i})\leq J_i^\infty(x_0, u_i, \buol_{-i})
+        J_i^\infty(x_0, \uol_i, \buol_{-i})\leq J_i^\infty(x_0, u_i, \buol_{-i})
     \end{equation}
     for all $u_i$ such that $(u_i, \buol_{-i})\in\mc{U}^\infty(x_0)$.
 \end{definition}
@@ -251,19 +251,31 @@ In \cite{benenati2024linear}, the authors determine a finite-horizon problem, wh
         \mathrm{Im}\left( \begin{bmatrix}0_{n\times Nn} \\ I_{Nn} \end{bmatrix} \right).
     \end{equation*}
 \end{assumption}
-The OL-NE is then determined by finding $(\Pol_i, \Kol_i)_{i\in\mc I}$ that solve the coupled algebraic Riccati equations (ARE) \cite{freiling1999}
+The OL-NE is determined via the following procedure: \\
+\emph{1)} Find $(\Pol_i, \Kol_i)_{i\in\mc I}$ that solve the coupled algebraic Riccati equations (ARE) \cite{freiling1999}
 \begin{align}
     \Pol_i &= Q_i + A^\top\Pol_i(A +\tsum_{j\in\mc I}B_j \Kol_j) \\
-    \Kol_i &= -R_i^{-1}B_i^{\top}\Pol_i(A +\tsum_{j\in\mc I}B_j \Kol_j),
+    \Kol_i &= -R_i^{-1}B_i^{\top}\Pol_i(A +\tsum_{j\in\mc I}B_j \Kol_j);
 \end{align}
-$(\Plqr_i, \Klqr_i)_{i\in\mc I}$ that solve the (uncoupled) AREs 
+\emph{2)} Find positive semi-definite $(\hat{P}_i)_{i\in\mc I}$ and $\hat{K}_i)_{i\in\mc I}$ that solve the (uncoupled) AREs 
 \begin{subequations}
     \begin{align}
-        \Plqr_i &= Q_i + A^\top\Plqr_i(A+B_i \Klqr_i)\\
-        \Klqr_i &= -R_i^{-1}B_i^{\top}\Plqr_i(A +B_i \Klqr_i),
+        \hat{P}_i &= \hat{Q}_i + \hat{A}_i^\top\hat{P}_i(\hat{A}_i+\hat{B}_i \hat{K}_i)\\
+        \hat{K}_i &= -R_i^{-1}\hat{B}_i^{\top}\hat{P}_i(\hat{A}_i +\hat{B}_i \hat{K}_i),
     \end{align}
 \end{subequations}
-and by solving the finite-horizon equilibrium problem
+where 
+\begin{align}
+    \begin{split}
+        \hat{A}_i &:= \begin{bmatrix}
+        A & \tsum_{j\neq i} B_j \Kol_j \\
+        0 & A + \tsum_{j\in\mc I} B_j \Kol_j
+    \end{bmatrix}, \\
+    \hat{Q}_i &:= \blkdiag(Q_i, 0_{n\times n}),\\
+    \hat{B}_i &:= \col(B_i, 0_{n\times m}),
+    \end{split}
+\end{align}
+\emph{3)} Solve the finite-horizon equilibrium problem
 \begin{align} \label{eq:finite_hor_problem}
 \begin{split}
 \text{Problem $\mc P_1(x_0)$:}&~ \text{find $\bu^*\in\mc U(x_0)$ such that}\\ 
@@ -275,26 +287,31 @@ and by solving the finite-horizon equilibrium problem
     \text{s.t.}&~~ (u_i, \bu^*_{-i})\in\mc U^T(x_0)
 \end{split}
 \end{align}
-for some $T\in\N$ and any $\hat{P}_i\succeq 0$ with structure
-\begin{equation*}
-    \hat{P}_i = \begin{bmatrix}
-        P_i^{\text{LQR}} & \Pol_i - P_i^{\text{LQR}} \\
-        (\Pol_i - P_i^{\text{LQR}})^{\top} & \star 
-    \end{bmatrix}.
-\end{equation*}
-Note that the unspecified block in $\hat{P}_i$ is not relevant, as the corresponding term in the objective of \eqref{eq:finite_hor_problem} is an additive constant for the $i$-th optimization problem. Before continuing, let us introduce the ``terminal set'' $\X_f$ as a forward-invariant, constraint-admissible set for the dynamics 
+for some $T\in\N$. \\
+Note that $\hat{P}_i\in\R^{2n\times 2n}$ and $\hat{K}_i\in\R^{m\times 2n}$. Consider the partition 
+\begin{equation}
+    \hat{K}_i = \begin{bmatrix}
+        K_i^1 & K_i^2
+    \end{bmatrix}
+\end{equation}
+with $K_i^1\in\R^{m\times n}$ and define 
+\begin{equation}
+    \Kol_i = K_i^1 + K_i^2 \quad \forall ~i.
+\end{equation}
+Let us introduce the ``terminal set'' $\X_f$ as a forward-invariant, constraint-admissible set for the dynamics 
 $$x[t+1]=(A + \tsum_{j\in\mc I} B_j \Kol_j) x[t].$$
-Note that this set is not enforced explicitly by a terminal constraint, as that would invalidate the results in \cite{benenati2024linear}.
+
 \begin{align} \label{eq:term_set}
 \begin{split}
     \X_f:=\{x\in\mathrm{int}(\X): & 
     (A + \tsum_{i\in\mc I} B_i \Kol_i) x\in\X_f; \\
     &\tsum_{i\in \mc I}\Du_i\Kol_i x +\du <0
-    \}
+    \}.
 \end{split}  
 \end{align}
+Note that this set is not enforced explicitly by a terminal constraint in \eqref{eq:finite_hor_problem}.
 \begin{lemma}\cite[Theorem 1]{benenati2024linear}
-    Let $\bu^*$ solve $\mc P(x_0)$, defined in \eqref{eq:finite_hor_problem}. Let $x_T:=\phi(T, x_0, \bu^*)$ and let $x_T\in \mathbb{X}_f$.
+    Let $\bu^*$ solve $\mc P_1(x_0)$, defined in \eqref{eq:finite_hor_problem}. Let $x_T:=\phi(T, x_0, \bu^*)$ and let $x_T\in \mathbb{X}_f$.
     Then, the sequence defined as
     \begin{equation}
         \forall i: \begin{cases}
@@ -304,21 +321,27 @@ Note that this set is not enforced explicitly by a terminal constraint, as that 
     \end{equation}
     is an OL-NE for the initial state $x_0$.
 \end{lemma}
-
-Intuitively speaking, the function $\left\| \begin{bmatrix}
-    x\\ y
-\end{bmatrix} \right\|^2_{\hat{P}_i}$ identifies the $i$-th agent's optimal cost-to-go from state $x$, when the remaining agents apply the infinite-horizon unconstrained OL-NE sequence starting from $y$. This is formalized in the following properties, which are shown in \cite[\S 3B]{benenati2024linear} and are here only reported because of space limitations.
-\begin{subequations}
-    \begin{align}
-        \left\|\begin{bmatrix}
-            x_0 \\ y_0
-        \end{bmatrix} \right\|_{\hat{P}_i} & \leq J_i^{\infty}(x_0, u_i, \buol_{-i}(y_0) \\
-        \left\|\begin{bmatrix}
-            x_0 \\ x_0
-        \end{bmatrix} \right\|_{\hat{P}_i} &= J_i^{\infty}(x_0, \uol_i(x_0), \buol_{-i}(y_0).
-    \end{align}
-\end{subequations}
-Therefore, the terminal cost in \eqref{eq:finite_hor_problem} models the ``tail" of agent's $i$ objective for the terminal states starting from which the unconstrained OL-NE is feasible. This  generalizes a known result in single-agent optimal control \cite{..}. We now link the solutions to $\mc P_1(x_0)$ to the solutions of a VI. Define the mapping 
+Intuitively speaking, if one defines the sequence of states and inputs
+resulting from the linear feedback $(\Kol_j)_{j\in\mc I}$ 
+\begin{align}\label{eq:unconstrained_NE_state_sequence}
+    \phi^K(t,x_0)&:= (A + \tsum_i\in\mc I)^t x_0, & \forall ~i;\\
+    u_i^K(t, x_0)&:= \Kol_i  \phi^{\text{ol}}(t,x_0), & \forall~i, t,
+\end{align}
+then the sequence $\bu^K(x_0)$ is a OL-NE for the unconstrained system. Furthermore, the function $\left\| \begin{bmatrix}
+    x_0\\ y_0
+\end{bmatrix} \right\|^2_{\hat{P}_i}$ identifies the $i$-th agent's optimal cost-to-go from state $x_0$, when the remaining agents apply the input sequence $\bu^K_{-i}(y_0)$ \cite[Lemma 1]{benenati2024linear}. 
+% This is formalized in the following properties: We remand to \cite[\S 3B]{benenati2024linear} for their derivation.
+% \begin{subequations}
+%     \begin{align}
+%         \left\|\begin{bmatrix}
+%             x_0 \\ y_0
+%         \end{bmatrix} \right\|_{\hat{P}_i} & \leq J_i^{\infty}(x_0, u_i, \bu^K_{-i}(y_0)) \\
+%         \left\|\begin{bmatrix}
+%             x_0 \\ x_0
+%         \end{bmatrix} \right\|_{\hat{P}_i} &= J_i^{\infty}(x_0, u^K_i(x_0), \bu^K_{-i}(x_0)).
+%     \end{align}
+% \end{subequations}
+Therefore, the terminal cost in \eqref{eq:finite_hor_problem} models the ``tail" of agent's $i$ objective for the terminal states $x[T]$ from which $u_i^K(x[T])$ is feasible, thus allowing one to compute the infinite-horizon constrained OL-NE via a finite-horizon problem. This  generalizes a known result in single-agent optimal control \cite{..}. We now link the solutions to $\mc P_1(x_0)$ to the solutions of a VI. Define the mapping 
 \begin{equation} \label{eq:def_F}
         F(\bu, x_0) = M\bu + q,
     \end{equation}
@@ -355,12 +378,9 @@ Therefore, the terminal cost in \eqref{eq:finite_hor_problem} models the ``tail"
     \label{fig:block_scheme}
 \end{figure}
 
-The authors in \cite{benenati2024linear} then propose the control strategy for \eqref{eq:dynamics} illustrated in Figure \ref{fig:block_scheme}, based on the receding-horizon solution of \eqref{eq:finite_hor_problem}, that is:
-\begin{equation}
-    \bs\kappa:x_0\mapsto \bu^*[0] ~\text{such that $\bu^*$ solves $\mc P_2(x_0)$.}
-\end{equation}
-The control action $\bs\kappa$ is well-defined for all $x_0\in\R^n$ such that $\mc U_T(x_0)$ is not empty for an appropriate choice of $(R_i)_{i\in\mc I}$, as we show next:
-\emiliosay{Remove to save on space?}
+
+Lemma \ref{lem: OL-NE as VI} identifies a computational method for the solutions of \eqref{eq:finite_hor_problem}, as efficient algorithms exist for the solution of a VI \cite{facchinei2003finite}. The need for a fast solution algorithm to $\mc P_2$ is of particular relevance, as the authors of \cite{benenati2024linear} propose the receding-horizon control action illustrated in Figure \ref{fig:block_scheme}, based on the recomputation at each timestep of its solution. With this application in mind, in the remainder of this paper, we explore a Douglas-Rachford (DR) splitting algorithm, which exploits the linear structure of the VI for its fast solution. This algorithm is linearly convergent \cite[Proposition 6]{ferris1996operator} when $M+M^{\top}\succ 0$, and it is advantageous compared to other commonly used VI solution methods, as illustrated in Figure \ref{fig1}.
+\iffalse
 \begin{lemma}
     If for all $i\in\mc I$
     \begin{align} \label{eq:gerschgorin_criterion}
@@ -389,17 +409,80 @@ In particular, \eqref{eq:gerschgorin_criterion} holds if $R_i=r_iI_m$, with $r_i
 \begin{equation}\label{eq:closed_loop_dyn}
     x[t+1] = Ax[t] + \sum_{j\in\mc I} B_j \kappa_j(x[t]).
 \end{equation}
-is asymptotically stable, and its nominal dynamics is an infinite-horizon OL-NE following Lemma \ref{le:inf_hor_OLNE} and \cite[Lemma 2]{benenati2024linear}. We denote the solution at time $t$ of \eqref{eq:closed_loop_dyn}. In applications, the implementation of $\bs\kappa$ requires the fast solution of a linear VI: We therefore explore a Douglas-Rachford (DR) splitting algorithm, which exploits the linear structure of the VI for its fast solution. This algorithm is linearly convergent \cite[Proposition 6]{ferris1996operator} when $M+M^{\top}\succ 0$, and we find it particularly advantageous compared to other commonly used VI solution methods, as illustrated in Figure \ref{fig1}. In Section \ref{sec:convergence}, we show its \red{quadratic} convergence when constraints are not active: This result is relevant for our application, because the constraints are inactive in a neighborhood of the attractor following Assumption \ref{as:strict_feasibility}. Given the stability of the closed-loop system, one can expect the state to be in this region the majority of the time, under normal operating circumstances.
+is asymptotically stable, and its nominal dynamics is an infinite-horizon OL-NE following Lemma \ref{le:inf_hor_OLNE} and \cite[Lemma 2]{benenati2024linear}. 
+\fi
+ In Section \ref{sec:convergence}, we show its \red{quadratic} convergence when constraints are not active: This result is relevant in control applications, because the constraints are inactive in a neighborhood of the attractor following Assumption \ref{as:strict_feasibility}. Following the stability of the closed-loop system, one can expect the state to be in this region the majority of the time, under normal operating circumstances.
 \begin{lemma}
     Let $x_0\in \mathbb{X}_f$. Let $M+M^{\top}\succ 0$. Let $\bu^*$ solve $\mc P_2(x_0)$. Then, $\bu^*\in\mathrm{int}(\mc U(x_0))$. 
 \end{lemma}
 \begin{proof}
-    From the definition of $\mc U(x_0)$ and $\mathbb{X}_f$, the sequence $\buol$ defined as
+    From the definition of $\mc U(x_0)$ and $\mathbb{X}_f$, the sequence $\bu^K(x_0)$ defined in \eqref{eq:unconstrained_NE_state_sequence}
+    is strictly feasible. We show that $\bu(0:T-1, x_0)$ solves $\mc P_1(x_0)$. Consider a generic $T$-long sequence $v_i$. Proceeding by contradiction, we assume  
+    \begin{equation}
+        J_i(x_0, v_i, \bu^K_{-i}) < J_i(x_0,u_i^K,\bu_{-i}^K).
+    \end{equation}
+    Denote $x^v_T = \phi(T, x_0, v_i, \bu_{-i}^K)$ and $x^K_T = \phi(T, x_0, u_i^K, \bu_{-i}^K)$. 
+    Following \cite[Lemma 1]{benenati2024linear} and the steps that lead to \cite[Eq. 21]{benenati2024linear}, the infinite sequence $w_i$ defined as
+    \begin{equation}
+        w_i[t]  = \hat{K}_i \left(\hat{A}_i + \begin{bmatrix}
+            B_i \\0
+        \end{bmatrix} \hat{K}_i\right)^t \begin{bmatrix}
+            x_T^v \\ x_T^K
+        \end{bmatrix} \quad \forall t\in\N
+    \end{equation}
+    achieves the infinite-horizon cost $\left\|\begin{bmatrix}
+            x_T^v \\ x_T^K
+        \end{bmatrix} \right\|^2_{\hat{P}_i}$, that is,
+    \begin{equation}
+        \left\|\begin{bmatrix}
+            x_T^v \\ x_T^K
+        \end{bmatrix} \right\|^2_{\hat{P}_i} = \sum_{t=0}^\infty \ell(\phi(t, x_T^v, w_i, \bu^K_{-i}(x_T^K)) , w_i[t] ).
+    \end{equation}
+    \begin{equation}
+        v_i^\infty = \begin{cases}
+            v_i[t] \\ 
+            \begin{bmatrix}
+                \Klqr_i & \Kol_i - \Klqr_i
+            \end{bmatrix} \begin{bmatrix}
+                A & \tsum_{j\neq i} B_j \Kol_j \\
+                0 & A + \tsum_{j\in\mc I} B_j \Kol_j
+            \end{bmatrix}
+        \end{cases}
+    \end{equation}
+    
+    Following \cite[Prop. 1]{benenati2024linear}, $\bu^K(x_0)$ is a unconstrained Nash equilibrium from $x_0$, thus for any sequence $v_i$ in $\R^m$,
+    \begin{equation} \label{eq:uk_inf_hor_OLNE}
+        J_i^{\infty} (x_0,  u_i^K, \bu_{-i}^K) \leq J_i^\infty (x_0, v_i, \bu^K_{-i}).
+    \end{equation} In particular, \eqref{eq:uk_inf_hor_OLNE} holds for any $v_i$ such that 
     \begin{align}
-        \uol_i[t] = \Kol_i(A + \tsum_{j\in\mc I} B_j\Kol_j)^t x_0
+        \sum_{t=T}^\infty \ell(\phi(t, x_0, v_i, \buol_{-i}), {u}_i[t]) = \left\|\begin{bmatrix}
+            x_T^v \\ x_T^K 
+        \end{bmatrix}\right\|^2_{\hat{P}_i}.
     \end{align}
-    is strictly feasible. 
+    By contradiction, assume that there exists $v_i$ such that 
+    Denote $x_v:= \phi(x_0,v_i, \bu^K_{-i}(x_0))$.
+    \begin{align}\label{eq:cost_of_v}
+        \begin{split}
+            J_i(x_0, v_i, \bu^K_{-i}(x_0)) &= \tsum_{t=0}^{T-1} \ell(x_0, v_i, \bu^K_{-i}(x_0)) + \left\|[x^v, x^K] \right\|_{\hat{P}_i}\\
+            & \leq \tsum_{t=0}^{T-1} \ell(x_0, v_i, \bu^K_{-i}(x_0)) + J_i^\infty(x^v, w_i, \bu^K_{-i}(x^K)) \\
+            & = J_i^\infty(x_0, v_i^\infty, \bu^K_{-i})
+        \end{split}
+    \end{align}
+    where the second inequality holds for any infinitely-long sequence of $\R^m$ $w_i$, and $v_i^\infty$ denotes the concatenation of $v_i$ and $w_i$. On the other hand,
+    \begin{align}\label{eq:cost_of_u_K}
+    \begin{split}
+        J_i(x_0, u^K_i, \bu^K_{-i}) & = \sum_{t=0}^{T-1} \ell (\phi^K(t,x_0), u_i^K(t,x_0)) + \left\|\begin{bmatrix}
+            \phi^K(T,x_0) \\ \phi^K(T,x_0)
+        \end{bmatrix} \right\|_{\hat{P}_i} \\
+        & \sum_{t=0}^{T-1} \ell (\phi^K(t,x_0), u_i^K(t,x_0)) + J_i^\infty(\phi^K(T,x_0), \bu^K(\phi^K(T,x_0))) \\
+        & = J_i^\infty(x_0, \bu^K(x_0)).
+    \end{split}
+    \end{align}
 \end{proof}
+Comparing \eqref{eq:cost_of_v} and \eqref{eq:cost_of_u_K} leads to 
+\begin{equation}
+    
+\end{equation}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Algorithm and Convergence}\label{sec:convergence}
